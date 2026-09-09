@@ -1,0 +1,12 @@
+pyrofork==2.3.69
+tgcrypto
+humanize
+pymongo
+psutil
+Pillow>=12.3.0
+dnspython
+environs
+dulwich==1.2.14
+aiohttp
+aiofiles
+bottle

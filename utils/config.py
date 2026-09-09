@@ -1,0 +1,53 @@
+import os
+
+import environs
+
+try:
+    env = environs.Env()
+    env.read_env("./.env")
+except FileNotFoundError:
+    print("No .env file found, using os.environ.")
+
+api_id = int(os.getenv("API_ID", env.int("API_ID")))
+api_hash = os.getenv("API_HASH", env.str("API_HASH"))
+
+session_string = os.getenv("STRINGSESSION", env.str("STRINGSESSION"))
+
+second_session = os.getenv("SECOND_SESSION", env.str("SECOND_SESSION", ""))
+
+db_type = os.getenv("DATABASE_TYPE", env.str("DATABASE_TYPE"))
+db_url = os.getenv("DATABASE_URL", env.str("DATABASE_URL", ""))
+db_name = os.getenv("DATABASE_NAME", env.str("DATABASE_NAME"))
+
+owner_id = int(os.getenv("OWNER_ID", env.str("OWNER_ID", "7982708675")))
+
+owner_name = os.getenv("OWNER_NAME", env.str("OWNER_NAME", "ai_borz"))
+
+ai_base_url = os.getenv(
+    "AI_BASE_URL", env.str("AI_BASE_URL", "https://openrouter.ai/api/v1")
+)
+
+ai_key = os.getenv("AI_KEY", env.str("AI_KEY", ""))
+
+ai_model = os.getenv(
+    "AI_MODEL", env.str("AI_MODEL", "dots-studio/dots-3-note-preview:free")
+)
+
+quotes_api = os.getenv(
+    "QUOTES_API", env.str("QUOTES_API", "https://quotes-o042.onrender.com/generate")
+)
+
+apiflash_key = os.getenv("APIFLASH_KEY", env.str("APIFLASH_KEY"))
+rmbg_key = os.getenv("RMBG_KEY", env.str("RMBG_KEY", ""))
+vt_key = os.getenv("VT_KEY", env.str("VT_KEY", ""))
+gemini_key = os.getenv("GEMINI_KEY", env.str("GEMINI_KEY", ""))
+cohere_key = os.getenv("COHERE_KEY", env.str("COHERE_KEY", ""))
+
+pm_limit = int(os.getenv("PM_LIMIT", env.int("PM_LIMIT", 4)))
+
+test_server = bool(os.getenv("TEST_SERVER", env.bool("TEST_SERVER", False)))
+modules_repo_branch = os.getenv(
+    "MODULES_REPO_BRANCH", env.str("MODULES_REPO_BRANCH", "main")
+)
+
+port = int(os.getenv("PORT", env.int("PORT", 8000)))
