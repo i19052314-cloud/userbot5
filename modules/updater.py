@@ -73,6 +73,14 @@ async def update(_, message: Message):
         os.system("lavhost update")
         return
 
+    if gitrepo is None:
+        await message.edit(
+            "<b>Cannot update:</b> deployed without git history.\n"
+            "Redeploy from Railway dashboard to update."
+        )
+        db.remove("core.updater", "restart_info")
+        return
+
     await message.edit("<b>Updating...</b>")
     try:
         if not check_command("termux-setup-storage"):
@@ -81,10 +89,21 @@ async def update(_, message: Message):
             )
 
         porcelain.fetch(gitrepo, b"origin")
-        origin_main_sha = gitrepo.refs[Ref(b"refs/remotes/origin/main")]
-        gitrepo.refs[Ref(b"refs/heads/main")] = origin_main_sha
-        gitrepo.refs.set_symbolic_ref(Ref(b"HEAD"), Ref(b"refs/heads/main"))
-        porcelain.reset(gitrepo, "hard", treeish=origin_main_sha)
+        # Support both `main` and `master` default branches (forks may use either).
+        origin_sha = None
+        origin_branch = None
+        for branch in ("main", "master"):
+            ref = Ref(f"refs/remotes/origin/{branch}".encode())
+            if ref in gitrepo.refs:
+                origin_sha = gitrepo.refs[ref]
+                origin_branch = branch
+                break
+        if origin_sha is None or origin_branch is None:
+            raise RuntimeError("No origin/main or origin/master ref found")
+        local_ref = Ref(f"refs/heads/{origin_branch}".encode())
+        gitrepo.refs[local_ref] = origin_sha
+        gitrepo.refs.set_symbolic_ref(Ref(b"HEAD"), local_ref)
+        porcelain.reset(gitrepo, "hard", treeish=origin_sha)
 
         if (
             os.path.exists("requirements.txt")

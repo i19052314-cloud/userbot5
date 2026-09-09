@@ -14,12 +14,11 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import os
 from sys import version_info
 
-from dulwich import porcelain
 from dulwich.errors import NotGitRepository
 from dulwich.objects import Tag
-from dulwich.refs import Ref
 from dulwich.repo import Repo
 
 from .db import db
@@ -27,49 +26,45 @@ from .reaction_handler import MessageReactionsUpdated, on_message_reactions_upda
 
 
 def get_commits_since_latest_tag(repo):
-    tags = list(repo.refs.subkeys(b"refs/tags/"))
-    if not tags:
+    try:
+        tags = list(repo.refs.subkeys(b"refs/tags/"))
+        if not tags:
+            return []
+
+        latest_tag = sorted(tags)[-1]
+        tag_sha = repo.refs[b"refs/tags/" + latest_tag]
+        tag_obj = repo.get_object(tag_sha)
+
+        target_commit_sha = (
+            tag_obj.object[1] if isinstance(tag_obj, Tag) else tag_obj.id
+        )
+
+        commits = []
+        for entry in repo.get_walker(include=[repo.head()]):
+            if entry.commit.id == target_commit_sha:
+                break
+            commits.append(entry.commit)
+
+        return commits
+    except Exception:
         return []
-
-    latest_tag = sorted(tags)[-1]
-    tag_sha = repo.refs[b"refs/tags/" + latest_tag]
-    tag_obj = repo.get_object(tag_sha)
-
-    target_commit_sha = tag_obj.object[1] if isinstance(tag_obj, Tag) else tag_obj.id
-
-    commits = []
-    for entry in repo.get_walker(include=[repo.head()]):
-        if entry.commit.id == target_commit_sha:
-            break
-        commits.append(entry.commit)
-
-    return commits
 
 
 try:
     gitrepo = Repo(".")
 except NotGitRepository:
-    gitrepo = Repo.init(".")
-    gitconfig = gitrepo.get_config()
-    gitconfig.set(
-        (b"remote", b"origin"),
-        b"url",
-        b"https://github.com/The-MoonTg-project/Moon-Userbot",
-    )
-    gitconfig.set(
-        (b"remote", b"origin"), b"fetch", b"+refs/heads/*:refs/remotes/origin/*"
-    )
-    gitconfig.write_to_path()
+    # No .git in this environment (e.g. Railway/Nixpacks/Docker build
+    # context without git history). NEVER wipe local files by fetching
+    # upstream here — that would replace a fork's code with the original
+    # bot. Just run without git info.
+    gitrepo = None
 
-    porcelain.fetch(gitrepo, b"origin")
-
-    origin_main_sha = gitrepo.refs[Ref(b"refs/remotes/origin/main")]
-    gitrepo.refs[Ref(b"refs/heads/main")] = origin_main_sha
-    gitrepo.refs.set_symbolic_ref(Ref(b"HEAD"), Ref(b"refs/heads/main"))
-    porcelain.reset(gitrepo, "hard", treeish=origin_main_sha)
-
-commits_since_tag = get_commits_since_latest_tag(gitrepo)
-userbot_version = f"2.5.{len(commits_since_tag)}"
+if gitrepo is not None:
+    commits_since_tag = get_commits_since_latest_tag(gitrepo)
+    userbot_version = f"2.5.{len(commits_since_tag)}"
+else:
+    commits_since_tag = []
+    userbot_version = os.getenv("BOT_VERSION", "2.5-custom")
 
 modules_help = {}
 requirements_list = []
