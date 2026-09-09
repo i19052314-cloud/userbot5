@@ -2,7 +2,7 @@ services:
 - type: worker
   name: Moon-Userbot
   runtime: docker
-  repo: https://github.com/The-MoonTg-project/Moon-Userbot
+  repo: https://github.com/i19052314-cloud/userbot5
   plan: starter
   envVars:
   - key: STABILITY_KEY

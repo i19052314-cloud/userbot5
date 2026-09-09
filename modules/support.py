@@ -61,6 +61,14 @@ async def version(client: Client, message: Message):
 
     await message.delete()
 
+    if gitrepo is None:
+        await message.reply(
+            f"<b>Moon Userbot version: {userbot_version}\n"
+            f"Changelog </b><i><a href=https://t.me/moonuserbot/{changelog}>in channel</a></i>.<b>\n"
+            f"Git info unavailable (deployed without .git)</b>",
+        )
+        return
+
     config = gitrepo.get_config()
     try:
         remote_url = config.get((b"remote", b"origin"), b"url").decode("utf-8")

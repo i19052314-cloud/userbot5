@@ -58,13 +58,22 @@ SCRIPT_PATH = os.path.dirname(os.path.realpath(__file__))
 if SCRIPT_PATH != os.getcwd():
     os.chdir(SCRIPT_PATH)
 
+def _device_model():
+    try:
+        if gitrepo is not None:
+            return f"Moon-Userbot @ {gitrepo.head().decode('utf-8')[:7]}"
+    except Exception:
+        pass
+    return "Moon-Userbot @ custom"
+
+
 common_params = {
     "api_id": config.api_id,
     "api_hash": config.api_hash,
     "hide_password": True,
     "workdir": SCRIPT_PATH,
     "app_version": userbot_version,
-    "device_model": f"Moon-Userbot @ {gitrepo.head().decode('utf-8')[:7]}",
+    "device_model": _device_model(),
     "system_version": platform.version() + " " + platform.machine(),
     "sleep_threshold": 30,
     "test_mode": config.test_server,
@@ -241,7 +250,8 @@ async def main():
         except Exception as e:
             logging.error(f"Error cancelling task rentry_cleanup or webui_task: {e}")
 
-        gitrepo.close()
+        if gitrepo is not None:
+            gitrepo.close()
         await app.stop()
 
 
